@@ -4,242 +4,516 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SafeClub DApp</title>
+    <title>SafeClub | Decentralized Governance Vault</title>
+    <meta name="description"
+        content="A secure, decentralized vault for community-driven fund management and proposal voting.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --bg: #f3f4f6;
-            --card-bg: #ffffff;
-            --text-main: #111827;
-            --text-muted: #6b7280;
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --secondary: #ec4899;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --radius-lg: 1.25rem;
+            --radius-md: 0.75rem;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --glass: rgba(255, 255, 255, 0.7);
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background: var(--bg);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at top right, #e0e7ff 0%, #f8fafc 40%);
             color: var(--text-main);
             margin: 0;
-            padding: 2rem;
-            line-height: 1.5;
+            padding: 0;
+            min-height: 100vh;
+            line-height: 1.6;
         }
 
-        .container {
-            max-width: 900px;
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 1rem 2rem;
+        }
+
+        .navbar-content {
+            max-width: 1100px;
             margin: 0 auto;
-        }
-
-        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
         }
 
-        h1 {
-            margin: 0;
-            font-size: 1.8rem;
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        h2 {
-            font-size: 1.25rem;
-            margin-top: 0;
+        .logo i {
+            font-style: normal;
         }
 
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.2s;
+        .container {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
         }
 
-        .btn:hover {
-            background: var(--primary-hover);
-        }
-
-        .btn:disabled {
-            background: var(--text-muted);
-            cursor: not-allowed;
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-        }
-
-        .btn-outline:hover {
-            background: #eff6ff;
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
         }
 
         .card {
-            background: var(--card-bg);
+            background: var(--surface);
             padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            margin-bottom: 1.5rem;
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
         }
 
-        .grid {
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            opacity: 0;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            margin: 0.5rem 0;
+            color: var(--primary-dark);
+        }
+
+        .grid-main {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 2rem;
         }
 
-        @media (min-width: 640px) {
-            .grid {
-                grid-template-columns: repeat(2, 1fr);
+        @media (max-width: 850px) {
+            .grid-main {
+                grid-template-columns: 1fr;
             }
         }
 
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
         .input-group {
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
         }
 
         label {
             display: block;
             margin-bottom: 0.5rem;
-            color: var(--text-muted);
             font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
         }
 
         input,
         select {
             width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            box-sizing: border-box;
+            padding: 0.75rem 1rem;
+            background: #f1f5f9;
+            border: 2px solid transparent;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
         }
 
-        .stat {
-            font-size: 0.875rem;
-            color: var(--text-muted);
+        input:focus {
+            background: #fff;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
         }
 
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-main);
+        .btn {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-connect {
+            width: auto;
+            border-radius: 9999px;
+            padding: 0.6rem 1.5rem;
+        }
+
+        /* Proposal Cards */
+        #proposalsList {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
         }
 
         .proposal-card {
-            border: 1px solid #e5e7eb;
-            padding: 1rem;
-            border-radius: 8px;
+            background: #fdfdfd;
+            border: 1px solid #edf2f7;
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            transition: all 0.3s;
+        }
+
+        .proposal-card:hover {
+            border-color: var(--primary-light);
+            background: white;
+        }
+
+        .proposal-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
             margin-bottom: 1rem;
         }
 
-        .proposal-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
+        .proposal-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-main);
         }
 
         .badge {
             font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
+            font-weight: 700;
+            padding: 0.25rem 0.75rem;
             border-radius: 9999px;
-            background: #e5e7eb;
-            color: #374151;
+            text-transform: uppercase;
         }
 
-        .badge.open {
+        .badge-active {
             background: #dcfce7;
-            color: #166534;
+            color: #15803d;
         }
 
-        .badge.closed {
+        .badge-closed {
             background: #fee2e2;
-            color: #991b1b;
+            color: #b91c1c;
         }
 
-        .badge.executed {
+        .badge-executed {
             background: #dbeafe;
-            color: #1e40af;
+            color: #1d4ed8;
         }
 
-        .vote-bar {
-            display: flex;
+        .vote-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .vote-progress {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .bar-yes {
+            background: var(--success);
+        }
+
+        .bar-no {
+            background: var(--danger);
+        }
+
+        .actions-row {
+            display: flex;
+            gap: 0.5rem;
             margin-top: 1rem;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        /* Toasts */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 1000;
+        }
+
+        .toast {
+            background: var(--text-main);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            margin-top: 0.5rem;
+            box-shadow: var(--shadow);
+            animation: slideIn 0.3s ease-out;
+            display: flex;
             align-items: center;
+            gap: 0.75rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading */
+        .loader {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
         }
     </style>
 </head>
 
 <body>
+    <header class="navbar">
+        <div class="navbar-content">
+            <div class="logo">
+                <i>🛡️</i> SafeClub
+            </div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span id="userAddressDisplay"
+                    style="display: none; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; background: #f1f5f9; padding: 0.4rem 1rem; border-radius: 9999px; border: 1px solid #e2e8f0;">
+                    0x...
+                </span>
+                <button id="connectBtn" class="btn btn-primary btn-connect">
+                    Connect Wallet
+                </button>
+            </div>
+        </div>
+    </header>
 
-    <div class="container">
-        <div class="header">
-            <h1>SafeClub</h1>
-            <button id="connectBtn" class="btn">Connect Wallet</button>
+    <main class="container">
+        <div id="welcomeScreen" class="empty-state" style="margin-top: 10vh;">
+            <h1 style="font-family: 'Outfit', sans-serif; font-size: 3rem;">Welcome to SafeClub</h1>
+            <p>Connect your wallet to manage the vault and vote on proposals.</p>
+            <div style="font-size: 4rem; margin: 2rem;">🤝</div>
         </div>
 
         <div id="app" style="display: none;">
-
-            <!-- Stats Section -->
-            <div class="grid" style="margin-bottom: 1.5rem;">
+            <!-- Stats -->
+            <section class="hero-stats">
                 <div class="card">
-                    <div class="stat">Vault Balance</div>
-                    <div class="stat-value" id="vaultBalance">0.0 ETH</div>
+                    <div class="stat-label">Vault Balance</div>
+                    <div class="stat-value" id="vaultBalance">0.00 ETH</div>
+                    <div style="font-size: 0.8rem; color: var(--success); font-weight: 600;">Mainnet Asset</div>
                 </div>
                 <div class="card">
-                    <div class="stat">Total Members</div>
+                    <div class="stat-label">Governance Members</div>
                     <div class="stat-value" id="memberCount">0</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Active Participants</div>
                 </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="grid">
-                <!-- Deposit -->
                 <div class="card">
-                    <h2>💰 Deposit</h2>
-                    <div class="input-group">
-                        <label>Amount (ETH)</label>
-                        <input type="number" step="0.01" id="depositAmount" placeholder="0.1">
-                    </div>
-                    <button onclick="deposit()" class="btn">Deposit Funds</button>
+                    <div class="stat-label">Contract Status</div>
+                    <div class="stat-value" style="font-size: 1.5rem; color: var(--success);">Online</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Multi-sig Verified</div>
                 </div>
+            </section>
 
-                <!-- Create Proposal -->
-                <div class="card">
-                    <h2>📝 New Proposal</h2>
-                    <div class="input-group">
-                        <label>Description</label>
-                        <input type="text" id="propDesc" placeholder="e.g. Buy Coffee">
+            <div class="grid-main">
+                <!-- Sidebar Actions -->
+                <aside>
+                    <div class="card" style="margin-bottom: 2rem;">
+                        <h2>📥 Deposit ETH</h2>
+                        <div class="input-group">
+                            <label>Contribution Amount</label>
+                            <div style="position: relative;">
+                                <input type="number" step="0.01" id="depositAmount" placeholder="0.00">
+                                <span
+                                    style="position: absolute; right: 1rem; top: 0.75rem; font-weight: 700;">ETH</span>
+                            </div>
+                        </div>
+                        <button id="depositBtn" onclick="deposit()" class="btn btn-primary">
+                            Deposit to Vault
+                        </button>
                     </div>
-                    <div class="input-group">
-                        <label>Recipient Address</label>
-                        <input type="text" id="propRecipient" placeholder="0x...">
+
+                    <div class="card">
+                        <h2>✍️ New Proposal</h2>
+                        <div class="input-group">
+                            <label>Purpose / Description</label>
+                            <input type="text" id="propDesc" placeholder="What is this for?">
+                        </div>
+                        <div class="input-group">
+                            <label>Recipient Address</label>
+                            <input type="text" id="propRecipient" placeholder="0x...">
+                        </div>
+                        <div class="input-group">
+                            <label>Grant Amount (ETH)</label>
+                            <input type="number" step="0.01" id="propAmount" placeholder="0.00">
+                        </div>
+                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                            ℹ️ Voting period will last 60 seconds (Demo mode).
+                        </p>
+                        <button id="createPropBtn" onclick="createProposal()" class="btn btn-outline">
+                            Create Proposal
+                        </button>
                     </div>
-                    <div class="input-group">
-                        <label>Amount (ETH)</label>
-                        <input type="number" step="0.01" id="propAmount" placeholder="0.1">
+
+                    <!-- Admin Panel (Visible only to Owner) -->
+                    <div id="adminPanel" class="card"
+                        style="display: none; border-top: 4px solid var(--secondary); margin-top: 2rem;">
+                        <h2 style="color: var(--secondary);">👑 Admin Control</h2>
+                        <div class="input-group">
+                            <label>New Member Address</label>
+                            <input type="text" id="newMemberAddr" placeholder="0x...">
+                        </div>
+                        <button id="addMemberBtn" onclick="addMember()" class="btn btn-primary"
+                            style="background: var(--secondary);">
+                            Add Member
+                        </button>
                     </div>
-                    <!-- Simplified duration for demo: constant or dropdown -->
-                    <button onclick="createProposal()" class="btn">Create Proposal (60s)</button>
-                </div>
+                </aside>
+
+                <!-- Proposal List -->
+                <section>
+                    <div class="card" style="min-height: 400px;">
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem;">
+                            <h2 style="margin:0;">🗳️ Active Proposals</h2>
+                            <button onclick="loadProposals()" class="btn btn-outline"
+                                style="width: auto; padding: 0.4rem 1rem;">
+                                Refresh
+                            </button>
+                        </div>
+                        <div id="proposalsList">
+                            <div class="empty-state">Fetching proposals...</div>
+                        </div>
+                    </div>
+                </section>
             </div>
-
-            <!-- Proposals List -->
-            <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h2>Proposals</h2>
-                    <button onclick="loadProposals()" class="btn-outline" style="font-size:0.875rem;">Refresh</button>
-                </div>
-                <div id="proposalsList">
-                    <p>Loading...</p>
-                </div>
-            </div>
-
         </div>
-    </div>
+    </main>
+
+    <div id="toastContainer" class="toast-container"></div>
 
     <script>
         const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
@@ -252,6 +526,8 @@
             "function createProposal(uint256 amount, address recipient, string description, uint256 durationSeconds) external returns (uint256)",
             "function vote(uint256 id, bool support) external",
             "function execute(uint256 id) external",
+            "function addMember(address member) external",
+            "function owner() external view returns (address)",
             "event ProposalCreated(uint256 indexed id, address indexed creator, address indexed recipient, uint256 amount, uint256 deadline, string description)"
         ];
 
@@ -260,33 +536,107 @@
 
         const connectBtn = document.getElementById('connectBtn');
         const appDiv = document.getElementById('app');
+        const welcomeScreen = document.getElementById('welcomeScreen');
 
-        // === Connect ===
+        // Toast Helper
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast`;
+            toast.innerHTML = `<span>${message}</span>`;
+            if (type === 'error') toast.style.background = 'var(--danger)';
+            if (type === 'success') toast.style.background = 'var(--success)';
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        // Connection Logic
         connectBtn.addEventListener('click', async () => {
-            if (!window.ethereum) return alert("MetaMask not found!");
+            if (!window.ethereum) return showToast("MetaMask not found!", 'error');
 
             try {
+                setLoading(connectBtn, true, "Connecting...");
                 provider = new ethers.BrowserProvider(window.ethereum);
                 await provider.send("eth_requestAccounts", []);
                 signer = await provider.getSigner();
                 userAddress = await signer.getAddress();
-
                 contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+
+                const addressDisplay = document.getElementById('userAddressDisplay');
+                addressDisplay.innerText = userAddress;
+                addressDisplay.style.display = 'block';
 
                 connectBtn.innerText = userAddress.slice(0, 6) + "..." + userAddress.slice(-4);
                 appDiv.style.display = 'block';
+                welcomeScreen.style.display = 'none';
 
+                showToast("Connected successfully!", 'success');
+                checkAdmin();
                 refreshData();
+
+                // Add confetti for premium feel
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
             } catch (err) {
                 console.error(err);
-                alert("Connection failed: " + err.message);
+                showToast("Connection failed: " + err.message, 'error');
+            } finally {
+                setLoading(connectBtn, false, "Connected");
             }
         });
+
+        async function checkAdmin() {
+            try {
+                const contractOwner = await contract.owner();
+                if (userAddress.toLowerCase() === contractOwner.toLowerCase()) {
+                    document.getElementById('adminPanel').style.display = 'block';
+                    showToast("Admin access granted", "success");
+                }
+            } catch (err) {
+                console.error("Error checking admin:", err);
+            }
+        }
+
+        async function addMember() {
+            const btn = document.getElementById('addMemberBtn');
+            const addr = document.getElementById('newMemberAddr').value;
+            if (!addr || !ethers.isAddress(addr)) return showToast("Enter a valid address", "error");
+
+            try {
+                setLoading(btn, true, "Adding...");
+                const tx = await contract.addMember(addr);
+                showToast("Adding new member...", "info");
+                await tx.wait();
+                showToast("Member added successfully!", "success");
+                document.getElementById('newMemberAddr').value = '';
+                refreshData();
+            } catch (err) {
+                showToast("Error: " + (err.reason || err.message), "error");
+            } finally {
+                setLoading(btn, false, "Add Member");
+            }
+        }
+
+        function setLoading(btn, isLoading, originalText) {
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = `<div class="loader"></div> ${originalText}`;
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
 
         async function refreshData() {
             try {
                 const balance = await contract.vaultBalance();
-                document.getElementById('vaultBalance').innerText = ethers.formatEther(balance) + " ETH";
+                document.getElementById('vaultBalance').innerText = parseFloat(ethers.formatEther(balance)).toFixed(3) + " ETH";
 
                 const count = await contract.memberCount();
                 document.getElementById('memberCount').innerText = count.toString();
@@ -297,130 +647,143 @@
             }
         }
 
-        // === Actions ===
         async function deposit() {
+            const btn = document.getElementById('depositBtn');
             const amt = document.getElementById('depositAmount').value;
-            if (!amt) return;
+            if (!amt) return showToast("Enter an amount", "error");
+
             try {
+                setLoading(btn, true, "Depositing...");
                 const tx = await contract.deposit({ value: ethers.parseEther(amt) });
+                showToast("Waiting for confirmation...", "info");
                 await tx.wait();
-                alert("Deposit successful!");
+                showToast("Deposit successful!", "success");
+                document.getElementById('depositAmount').value = '';
                 refreshData();
             } catch (err) {
-                console.error(err);
-                alert("Error: " + (err.reason || err.message));
+                showToast("Error: " + (err.reason || err.message), "error");
+            } finally {
+                setLoading(btn, false, "Deposit to Vault");
             }
         }
 
         async function createProposal() {
+            const btn = document.getElementById('createPropBtn');
             const desc = document.getElementById('propDesc').value;
             const recipient = document.getElementById('propRecipient').value;
             const amt = document.getElementById('propAmount').value;
 
-            if (!desc || !recipient || !amt) return alert("Fill all fields");
-
-            if (!ethers.isAddress(recipient)) {
-                return alert("Invalid Ethereum Address! Please use a 0x address.");
-            }
+            if (!desc || !recipient || !amt) return showToast("Fill all fields", "error");
+            if (!ethers.isAddress(recipient)) return showToast("Invalid address", "error");
 
             try {
-                // Hardcoded 60 seconds duration for easy testing
-                const tx = await contract.createProposal(
-                    ethers.parseEther(amt),
-                    recipient,
-                    desc,
-                    60
-                );
+                setLoading(btn, true, "Creating...");
+                const tx = await contract.createProposal(ethers.parseEther(amt), recipient, desc, 60);
+                showToast("Submitting proposal...", "info");
                 await tx.wait();
-                alert("Proposal created!");
+                showToast("Proposal created!", "success");
                 refreshData();
             } catch (err) {
-                console.error(err);
-                alert("Error: " + (err.reason || err.message));
+                showToast("Error: " + (err.reason || err.message), "error");
+            } finally {
+                setLoading(btn, false, "Create Proposal");
             }
         }
 
         async function vote(id, support) {
             try {
+                showToast(`Voting ${support ? 'Yes' : 'No'}...`, "info");
                 const tx = await contract.vote(id, support);
                 await tx.wait();
-                alert("Voted!");
+                showToast("Vote recorded!", "success");
                 loadProposals();
             } catch (err) {
-                console.error(err);
-                alert("Error: " + (err.reason || err.message));
+                showToast("Error: " + (err.reason || err.message), "error");
             }
         }
 
         async function executeChain(id) {
             try {
+                showToast("Executing proposal...", "info");
                 const tx = await contract.execute(id);
                 await tx.wait();
-                alert("Executed!");
+                showToast("Proposal executed!", "success");
                 loadProposals();
-                refreshData(); // Balance changes
+                refreshData();
             } catch (err) {
-                console.error(err);
-                alert("Error: " + (err.reason || err.message));
+                showToast("Error: " + (err.reason || err.message), "error");
             }
         }
 
-        // === Render Proposals ===
         async function loadProposals() {
             const list = document.getElementById('proposalsList');
-            list.innerHTML = "Loading...";
-
             try {
                 const pCount = await contract.proposalCount();
-                let html = "";
+                if (Number(pCount) === 0) {
+                    list.innerHTML = `<div class="empty-state">No proposals yet. Start one!</div>`;
+                    return;
+                }
 
-                // Loop in reverse to show newest first
+                let html = "";
                 for (let i = Number(pCount) - 1; i >= 0; i--) {
                     const p = await contract.getProposal(i);
-
                     const deadline = new Date(Number(p.deadline) * 1000);
                     const isExpired = new Date() > deadline;
                     const status = p.executed ? "Executed" : (isExpired ? "Closed" : "Active");
-                    const badgeClass = p.executed ? "executed" : (isExpired ? "closed" : "open");
+                    const badgeClass = p.executed ? "badge-executed" : (isExpired ? "badge-closed" : "badge-active");
+
+                    const totalVotes = Number(p.yesVotes) + Number(p.noVotes);
+                    const yesPercent = totalVotes > 0 ? (Number(p.yesVotes) / totalVotes) * 100 : 0;
+                    const noPercent = totalVotes > 0 ? (Number(p.noVotes) / totalVotes) * 100 : 0;
 
                     html += `
-                <div class="proposal-card">
-                    <div class="proposal-header">
-                        <strong>#${i} ${p.description}</strong>
-                        <span class="badge ${badgeClass}">${status}</span>
-                    </div>
-                    <div style="font-size:0.9rem; margin-bottom:0.5rem;">
-                        <div>To: ${p.recipient.slice(0, 6)}...${p.recipient.slice(-4)}</div>
-                        <div>Amount: ${ethers.formatEther(p.amount)} ETH</div>
-                        <div>Deadline: ${deadline.toLocaleString()}</div>
-                    </div>
-                    <div class="vote-bar">
-                        <span style="color:green">Yes: ${p.yesVotes}</span>
-                        <span style="color:red">No: ${p.noVotes}</span>
-                        
-                        ${!p.executed && !isExpired ? `
-                            <button class="btn-outline" onclick="vote(${i}, true)">Vote Yes</button>
-                            <button class="btn-outline" onclick="vote(${i}, false)">Vote No</button>
-                        ` : ''}
+                        <div class="proposal-card">
+                            <div class="proposal-meta">
+                                <div>
+                                    <div class="proposal-title">#${i} ${p.description}</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">To: ${p.recipient.slice(0, 10)}...${p.recipient.slice(-6)}</div>
+                                </div>
+                                <span class="badge ${badgeClass}">${status}</span>
+                            </div>
 
-                        ${!p.executed && isExpired ? `
-                            <button class="btn" onclick="executeChain(${i})">Execute</button>
-                        ` : ''}
-                    </div>
-                </div>
-                `;
+                            <div style="font-size: 0.9rem; margin-bottom: 0.5rem;">
+                                <strong>${ethers.formatEther(p.amount)} ETH</strong> Requested
+                            </div>
+
+                            <div class="vote-stats">
+                                <div style="color: var(--success); font-weight: 600;">Yes: ${p.yesVotes}</div>
+                                <div style="color: var(--danger); font-weight: 600; text-align: right;">No: ${p.noVotes}</div>
+                            </div>
+
+                            <div class="vote-progress">
+                                <div class="bar-yes" style="width: ${yesPercent}%"></div>
+                                <div class="bar-no" style="width: ${noPercent}%"></div>
+                            </div>
+
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                                ${isExpired ? 'Ended on ' : 'Ends on '} ${deadline.toLocaleString()}
+                            </div>
+
+                            <div class="actions-row">
+                                ${!p.executed && !isExpired ? `
+                                    <button class="btn btn-outline action-btn" onclick="vote(${i}, true)">👍 Yes</button>
+                                    <button class="btn btn-outline action-btn" onclick="vote(${i}, false)">👎 No</button>
+                                ` : ''}
+
+                                ${!p.executed && isExpired ? `
+                                    <button class="btn btn-primary action-btn" onclick="executeChain(${i})">⚡ Execute Fund Transfer</button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
                 }
-
-                if (Number(pCount) === 0) list.innerHTML = "<p>No proposals yet.</p>";
-                else list.innerHTML = html;
-
+                list.innerHTML = html;
             } catch (err) {
                 console.error(err);
-                list.innerHTML = `<p style="color:red">Error loading proposals: ${err.reason || err.message}</p>`;
+                list.innerHTML = `<div class="empty-state" style="color:red">Error loading proposals</div>`;
             }
         }
     </script>
-
 </body>
 
 </html>
