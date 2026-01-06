@@ -84,5 +84,15 @@ Le contrat `SafeClub.sol` gère les étapes suivantes :
 - **Ownable** : Contrôles administratifs pour la gestion des membres.
 - **Validation des entrées** : Empêche l'utilisation d'adresses invalides (0x0) ou de montants nuls.
 
+## 🛡️ Audit de Sécurité (Slither)
+
+Pour garantir la robustesse du Smart Contract, le projet a été audité à l'aide de **Slither**, l'analyseur statique de référence pour Solidity.
+
+Points vérifiés et validés :
+- **Protection contre la Réentrée** : Validation de l'utilisation de `nonReentrant` et du respect du pattern *Checks-Effects-Interactions*.
+- **Correctness des Accès** : Vérification que les fonctions sensibles sont protégées par les modifiers `onlyMember` ou `onlyOwner`.
+- **Efficacité du Gas** : Optimisation des boucles et des visibilités de fonctions (`external` vs `public`).
+- **Absence de vulnérabilités critiques** : Aucune faille de type *integer overflow*, *shadowing* ou *uninitialized variables* détectée.
+
 ---
 Développé pour la démonstration de gouvernance décentralisée.

@@ -399,15 +399,18 @@
             <div class="logo">
                 <i>🛡️</i> SafeClub
             </div>
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <span id="userAddressDisplay"
-                    style="display: none; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; background: #f1f5f9; padding: 0.4rem 1rem; border-radius: 9999px; border: 1px solid #e2e8f0;">
-                    0x...
-                </span>
-                <button id="connectBtn" class="btn btn-primary btn-connect">
-                    Connect Wallet
-                </button>
-            </div>
+            <span id="memberStatus"
+                style="display: none; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 9999px;">
+                Guest
+            </span>
+            <span id="userAddressDisplay"
+                style="display: none; font-size: 0.85rem; color: var(--text-muted); font-weight: 600; background: #f1f5f9; padding: 0.4rem 1rem; border-radius: 9999px; border: 1px solid #e2e8f0;">
+                0x...
+            </span>
+            <button id="connectBtn" class="btn btn-primary btn-connect">
+                Connect Wallet
+            </button>
+        </div>
         </div>
     </header>
 
@@ -471,11 +474,15 @@
                             <input type="number" step="0.01" id="propAmount" placeholder="0.00">
                         </div>
                         <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1.5rem;">
-                            ℹ️ Voting period will last 60 seconds (Demo mode).
+                            ℹ️ Voting period will last 2 minutes (120s).
                         </p>
                         <button id="createPropBtn" onclick="createProposal()" class="btn btn-outline">
                             Create Proposal
                         </button>
+                        <div id="memberOnlyWarning"
+                            style="display: none; color: var(--danger); font-size: 0.8rem; margin-top: 1rem; text-align: center; font-weight: 600;">
+                            ⚠️ Only club members can create proposals or vote.
+                        </div>
                     </div>
 
                     <!-- Admin Panel (Visible only to Owner) -->
@@ -528,11 +535,14 @@
             "function execute(uint256 id) external",
             "function addMember(address member) external",
             "function owner() external view returns (address)",
+            "function isMember(address member) external view returns (bool)",
+            "function hasVoted(uint256 id, address member) external view returns (bool)",
             "event ProposalCreated(uint256 indexed id, address indexed creator, address indexed recipient, uint256 amount, uint256 deadline, string description)"
         ];
 
         let provider, signer, contract;
         let userAddress;
+        let userIsMember = false;
 
         const connectBtn = document.getElementById('connectBtn');
         const appDiv = document.getElementById('app');
@@ -591,6 +601,31 @@
             }
         });
 
+        async function checkMembership() {
+            try {
+                userIsMember = await contract.isMember(userAddress);
+                const statusBadge = document.getElementById('memberStatus');
+                const warning = document.getElementById('memberOnlyWarning');
+
+                statusBadge.style.display = 'block';
+                if (userIsMember) {
+                    statusBadge.innerText = 'MEMBER';
+                    statusBadge.style.background = '#dcfce7';
+                    statusBadge.style.color = '#15803d';
+                    warning.style.display = 'none';
+                    document.getElementById('createPropBtn').disabled = false;
+                } else {
+                    statusBadge.innerText = 'NON-MEMBER';
+                    statusBadge.style.background = '#fee2e2';
+                    statusBadge.style.color = '#b91c1c';
+                    warning.style.display = 'block';
+                    document.getElementById('createPropBtn').disabled = true;
+                }
+            } catch (err) {
+                console.error("Error checking membership:", err);
+            }
+        }
+
         async function checkAdmin() {
             try {
                 const contractOwner = await contract.owner();
@@ -641,6 +676,7 @@
                 const count = await contract.memberCount();
                 document.getElementById('memberCount').innerText = count.toString();
 
+                await checkMembership();
                 loadProposals();
             } catch (err) {
                 console.error("Error fetching data:", err);
@@ -678,10 +714,13 @@
 
             try {
                 setLoading(btn, true, "Creating...");
-                const tx = await contract.createProposal(ethers.parseEther(amt), recipient, desc, 60);
+                const tx = await contract.createProposal(ethers.parseEther(amt), recipient, desc, 120);
                 showToast("Submitting proposal...", "info");
                 await tx.wait();
                 showToast("Proposal created!", "success");
+                document.getElementById('propDesc').value = '';
+                document.getElementById('propRecipient').value = '';
+                document.getElementById('propAmount').value = '';
                 refreshData();
             } catch (err) {
                 showToast("Error: " + (err.reason || err.message), "error");
@@ -765,19 +804,39 @@
                             </div>
 
                             <div class="actions-row">
-                                ${!p.executed && !isExpired ? `
-                                    <button class="btn btn-outline action-btn" onclick="vote(${i}, true)">👍 Yes</button>
-                                    <button class="btn btn-outline action-btn" onclick="vote(${i}, false)">👎 No</button>
-                                ` : ''}
+                                ${!p.executed && !isExpired ? (
+                            userIsMember ? `
+                                        <button id="voteYes-${i}" class="btn btn-outline action-btn" onclick="vote(${i}, true)">👍 Yes</button>
+                                        <button id="voteNo-${i}" class="btn btn-outline action-btn" onclick="vote(${i}, false)">👎 No</button>
+                                    ` : `<div style="font-size: 0.8rem; color: var(--text-muted); text-align:center; width:100%">Join the club to vote</div>`
+                        ) : ''}
 
-                                ${!p.executed && isExpired ? `
-                                    <button class="btn btn-primary action-btn" onclick="executeChain(${i})">⚡ Execute Fund Transfer</button>
-                                ` : ''}
+                                ${!p.executed && isExpired ? (
+                            userIsMember ? `
+                                        <button class="btn btn-primary action-btn" onclick="executeChain(${i})">⚡ Execute Fund Transfer</button>
+                                    ` : `<div style="font-size: 0.8rem; color: var(--text-muted); text-align:center; width:100%">Waiting for execution</div>`
+                        ) : ''}
                             </div>
                         </div>
                     `;
                 }
                 list.innerHTML = html;
+
+                // Disable buttons for people who already voted
+                if (userIsMember) {
+                    for (let i = 0; i < Number(pCount); i++) {
+                        const hasVoted = await contract.hasVoted(i, userAddress);
+                        if (hasVoted) {
+                            const yBtn = document.getElementById(`voteYes-${i}`);
+                            const nBtn = document.getElementById(`voteNo-${i}`);
+                            if (yBtn) {
+                                yBtn.disabled = true;
+                                yBtn.innerText = "Voted";
+                            }
+                            if (nBtn) nBtn.style.display = 'none';
+                        }
+                    }
+                }
             } catch (err) {
                 console.error(err);
                 list.innerHTML = `<div class="empty-state" style="color:red">Error loading proposals</div>`;
